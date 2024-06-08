@@ -1,25 +1,22 @@
-import express from "express"
+import express from "express";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import helmet from "helmet";
 import morgan from "morgan";
-import cors from 'cors'
+import cors from "cors";
 import dotenv from "dotenv";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 // import userRoutes from "./routes/userRoutes.js"
-import controller from "./controller/userController.js"
-import nodemailer from "nodemailer"
-import crypto from "crypto"
+import controller from "./controller/userController.js";
+import userLogin from "./controller/userLogin.js";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 import User from "./models/userSchema.js";
 
-
-
-
-const app=express();
+const app = express();
 const PORT = process.env.PORT || 9001;
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,31 +33,27 @@ app.use(cors());
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
 // importing the db connection from db file
-import("./config/db.js")
+import("./config/db.js");
 
-
-          
-
-
-
-const storage=multer.diskStorage({
-    destination:function(req,file,cb){
-        return cb(null,'/uploads')
-    },
-    filename: function(req,file,cb){
-        return cb(null, `${Date.now()}-${file.originalname}`)
-    }
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    return cb(null, "/uploads");
+  },
+  filename: function (req, file, cb) {
+    return cb(null, `${Date.now()}-${file.originalname}`);
+  },
 });
 
-const upload=multer({storage})
-
-
-
-
+const upload = multer({ storage });
 
 // user auth endpoints
-app.use("/api/register",upload.single('profileimage') ,controller.registerUser);
+app.use(
+  "/api/register",
+  upload.single("profileimage"),
+  controller.registerUser
+);
 
+<<<<<<< HEAD
   
 app.get('/api/verify-email', async (req, res) => {
     const token = req.query.token;
@@ -81,13 +74,33 @@ app.get('/api/verify-email', async (req, res) => {
       const user = await User.deleteOne({ verificationToken: token });
       
       res.status(500).json({ message: 'Error verifying email' });
-    }
-  });
-  
-app.get("/",(req,res)=>{
-    res.send("This is homepage for twitter");
-})
+=======
+app.use("/api/verify-email", async (req, res) => {
+  const token = req.query.token;
 
-app.listen(process.env.PORT,()=>{
-    console.log("The server is running on ");
-  })
+  try {
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid verification token" });
+>>>>>>> 64532a2 (new login page added)
+    }
+
+    user.verified = true;
+    user.verificationToken = undefined; // Remove token after verification
+    await user.save();
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error verifying email" });
+  }
+});
+app.post("/api/login", controller.userLogin);
+
+app.get("/", (req, res) => {
+  res.send("This is homepage for twitter");
+});
+
+app.listen(process.env.PORT, () => {
+  console.log("The server is running on ");
+});
