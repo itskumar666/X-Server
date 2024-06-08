@@ -15,10 +15,13 @@ const userController = {
 
   registerUser: async (req, res) => {
     try {
-      const { name, email,birthday } = req.body;
+      const { name,username, email,password } = req.body;
 
       // Generate verification token (replace with a secure token generation method)
       const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+
+
     
       const newUser = new User({ name:name, email:email, dateOfBirth:birthday, verificationToken: token });
       try {

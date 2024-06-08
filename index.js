@@ -78,6 +78,8 @@ app.get('/api/verify-email', async (req, res) => {
       res.status(200).json({ message: 'Email verified successfully' });
     } catch (err) {
       console.error(err);
+      const user = await User.deleteOne({ verificationToken: token });
+      
       res.status(500).json({ message: 'Error verifying email' });
     }
   });
