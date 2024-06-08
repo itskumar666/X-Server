@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
 import User from "../models/userSchema.js";
 import cloudinary from "../config/cloudinaryconfig.js"
-
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import nodemailer from "nodemailer"
-
+dotenv.config();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -61,6 +62,29 @@ const userController = {
       res.status(500).json({ error: 'Server error' });
     }
   },
-};
+  userLogin: async (req, res) => {
+    const { username, password } = req.body;
+    try {
+      const user = await User.findOne({ username:username });
+      console.log(user)
+      if (!user) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+  
+      if (!password==user.password) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+  // change secret key ***
+      const token = jwt.sign({ userId: username },"shivam");
+      // res.status(200).json({ token });
+      console.log(token)
+      res.cookie('token', token).json({ message: "Login successful" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error" });
+    }
+  
+  }}
+
 
 export default userController;

@@ -8,14 +8,21 @@ import dotenv from "dotenv";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
+
+
 // import userRoutes from "./routes/userRoutes.js"
 import controller from "./controller/userController.js";
-import userLogin from "./controller/userLogin.js";
+
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import User from "./models/userSchema.js";
 
 const app = express();
+const corsOptions = {
+  origin:"http://localhost:3001",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 const PORT = process.env.PORT || 9001;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +36,6 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(bodyParser.json({ limit: "100mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 app.use(morgan("common"));
-app.use(cors());
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
 // importing the db connection from db file
@@ -53,28 +59,6 @@ app.use(
   controller.registerUser
 );
 
-<<<<<<< HEAD
-  
-app.get('/api/verify-email', async (req, res) => {
-    const token = req.query.token;
-  
-    try {
-      const user = await User.findOne({ verificationToken: token });
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid verification token' });
-      }
-  
-      user.verified = true;
-      user.verificationToken = undefined; // Remove token after verification
-      await user.save();
-  
-      res.status(200).json({ message: 'Email verified successfully' });
-    } catch (err) {
-      console.error(err);
-      const user = await User.deleteOne({ verificationToken: token });
-      
-      res.status(500).json({ message: 'Error verifying email' });
-=======
 app.use("/api/verify-email", async (req, res) => {
   const token = req.query.token;
 
@@ -82,7 +66,6 @@ app.use("/api/verify-email", async (req, res) => {
     const user = await User.findOne({ verificationToken: token });
     if (!user) {
       return res.status(400).json({ message: "Invalid verification token" });
->>>>>>> 64532a2 (new login page added)
     }
 
     user.verified = true;
@@ -95,7 +78,7 @@ app.use("/api/verify-email", async (req, res) => {
     res.status(500).json({ message: "Error verifying email" });
   }
 });
-app.post("/api/login", controller.userLogin);
+app.use("/api/login", controller.userLogin);
 
 app.get("/", (req, res) => {
   res.send("This is homepage for twitter");
