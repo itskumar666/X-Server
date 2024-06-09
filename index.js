@@ -8,9 +8,9 @@ import dotenv from "dotenv";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
-import { userAuthenticate } from "./middleware/userAuthenticate.js";
 import cloudinary from "./config/cloudinaryconfig.js";
 import cookieParser from "cookie-parser";
+import  {verifyToken}  from "./middleware/userAuthenticate.js";
 
 // import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
@@ -116,20 +116,24 @@ app.use("/api/verify-email", async (req, res) => {
 app.use("/api/login", controller.userLogin);
 
 
-app.use("/api/Home",userAuthenticate);
-app.patch("/api/user/profileUpdate",upload.single('file'), userData.updateProfile);
-app.use("/api/user/posts",userAuthenticate, userData.getAllfollowingPosts);
-// app.use("/api/user/post/",upload.single('media'),userData.postTweet);
-app.post("/api/user/post",upload.single('file'),userData.postTweet);
-app.delete("/api/user/delete/",userData.deleteTweet);
-app.patch("/api/user/update/",userData.updateTweet);
-app.get("/api/user/myProfile",userData.getMyProfile);
-app.get("/api/user/userDetails",userData.getuserDetails);
+// app.use("/api/Home",verifyToken,userAuthenticate);
+app.get("/",verifyToken,(req,res)=>{
+  console.log("aa gya hu bc",req.user)
+  res.json({message:"hello"})
+});
+app.patch("/api/user/profileUpdate",verifyToken,upload.single('file'), userData.updateProfile);
+app.use("/api/user/posts",verifyToken, userData.getAllfollowingPosts);
+app.post("/api/user/post",verifyToken,upload.single('file'),userData.postTweet);
+app.delete("/api/user/delete/",verifyToken,userData.deleteTweet);
+app.patch("/api/user/update/",verifyToken,userData.updateTweet);
+app.get("/api/user/myProfile",verifyToken,userData.getMyProfile);
+app.put("/api/user/profileUpdate",verifyToken,userData.updateProfile);
+app.get("/api/user/userDetails",verifyToken,userData.getuserDetails);
 app.patch("/api/user/follow",userData.followUser);
-app.patch("/api/user/unfollow",userData.unFollowUser);
-app.get("/api/user/allFollowingPosts",userData.getAllfollowingPosts);
-app.get("/api/user/followers",userData.getFollowers);
-app.get("/api/user/following",userData.getFollowing);
+app.patch("/api/user/unfollow",verifyToken,userData.unFollowUser);
+app.get("/api/user/allFollowingPosts",verifyToken,userData.getAllfollowingPosts);
+app.get("/api/user/followers",verifyToken,userData.getFollowers);
+app.get("/api/user/following",verifyToken,userData.getFollowing);
 
 
 // app.use("/api/users/posts/:id",userAuthenticate,controller.getUserPost);

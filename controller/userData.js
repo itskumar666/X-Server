@@ -8,7 +8,7 @@ import cloudinary from "../config/cloudinaryconfig.js";
 export const userData = {
 
   getMyProfile: async (req, res) => {
-    const users = await User.find({ username: req.body.username })
+    const users = await User.find({ username: req.user.username })
       .populate("tweets")
       .exec();
      
@@ -17,7 +17,7 @@ export const userData = {
   },
   getuserDetails: async (req, res) => {
    
-    const users = await User.find({ username: req.body.username })
+    const users = await User.find({ username: req.user.username })
       .populate("followers")
       .populate("following")
       .populate("tweets")
@@ -29,32 +29,87 @@ export const userData = {
     res.status(200).json(users);
   },
   getAllfollowingPosts: async (req, res) => {
+    // try {
+    //   // Find the current user
+    //   const currentUser = await User.findOne({ username: req.user.username }).populate('following');
+  
+    //   if (!currentUser) {
+    //     return res.status(404).json({ error: "User not found" });
+    //   }
+    //  console.log(currentUser,"currentUser")
+    //   // Get the _ids of users the current user is following
+    //   const followingUserIds = currentUser.following.map(user => user._id);
+  
+    //   // Find tweets where the username (userId) is in the followingUserIds array
+    //   console.log('Tweet Query:', { username: { $in: followingUserIds } });
+    //   const posts = await Tweet.find({ username: { $in: followingUserIds } })
+    //     // .populate('username', 'name') // Populate the username field with the user's name
+    //     // .sort({ createdAt: -1 })
+    //     .limit(100) // Sort by createdAt in descending order (newest first)
+    //     .exec();
+        
+    //   console.log(posts)
+    //   console.log("Number of Posts Retrieved:", posts.length);
+
+    //   res.status(200).json(posts);
+    // } catch (error) {
+    //   console.error("Error fetching posts:", error);
+    //   res.status(500).json({ error: "Internal server error" });
+    // }
     try {
-      // Find the current user
-      const currentUser = await User.findOne({ username: req.body.username }).populate('following');
-  
-      if (!currentUser) {
-        return res.status(404).json({ error: "User not found" });
+      const username = req.user.username;
+      console.log(username, "ye user 2 wala");
+    
+      // Find the user and populate the following field
+      const user = await User.findOne({ username: username }).populate({
+        path: 'following',
+        populate: {
+          path: 'tweets', // Assuming 'tweets' is the field name in the User schema
+        }
+      });
+    
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
-  
-      // Get the _ids of users the current user is following
-      const followingUserIds = currentUser.following.map(user => user._id);
-  
-      // Find tweets where the username (userId) is in the followingUserIds array
-      const posts = await Tweet.find({ username: { $in: followingUserIds } })
-        .populate('username', 'name') // Populate the username field with the user's name
-        .sort({ createdAt: -1 }) // Sort by createdAt in descending order (newest first)
-        .exec();
-  
-      res.status(200).json(posts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({ error: "Internal server error" });
+    
+      // Format the following users and their tweets
+      const formattedFriends = user.following.map(friend => ({
+        username: friend.username,
+        name: friend.name,
+        tweets: friend.tweets,
+      }));
+      let arr=[];
+    formattedFriends.map(friend => {
+        arr.push(friend.tweets)  
+    })
+    arr=arr.flat();
+    arr.sort((a, b) => b.createdAt - a.createdAt);
+      console.log("arr",arr)
+    let ans=[]
+    // arr.map(tweet=>{
+      
+    // })
+      // console.log(formattedFriends);
+      res.status(200).json({arr});
     }
+    // const user = await User.find({username:username}).populate('following');
+    // console.log("user",user)
+    // const followingIds = user.following.map((followedUser) => followedUser._id);
+    // console.log("followingIds",followingIds)
+    // const tweets = await Tweet.find({ _id: { $in: followingIds } }).sort({ createdAt: -1 });
+    // console.log("tweets",tweets)
+
+    // res.json(tweets);
+    // } 
+    catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  
   },
   postTweet: async (req, res) => {
     try {
-      const { username, content } = req.body;
+      const { username } = req.user;
+      const{content} = req.body;
       const userId = await User.findOne({ username: username });
       console.log(username,content)
       if (!userId) {
@@ -70,7 +125,9 @@ export const userData = {
       }
 
       const tweet = new Tweet({
-        username: userId._id,
+        username: username,
+        name: userId.name,
+        profilePicture: userId.profilePicture,
         content,
         media: mediaUrl||'not posted on cloud',
       });
@@ -90,7 +147,7 @@ export const userData = {
 },
 deleteTweet: async (req, res) => {
     try {
-      const { id } = req.body;
+      const { id } = req.user;
       console.log(id,"id");
       const tweet = await Tweet.findOne({ _id: id });
       console.log(tweet,"tweet");
@@ -109,7 +166,7 @@ catch{
 },
 updateTweet: async (req, res) => {
   try {
-    const { id, content} = req.body;
+    const { id, content} = req.user;
     console.log(id,"id");
     const tweet = await Tweet.findOne({ _id: id });
     console.log(tweet,"tweet");
@@ -163,7 +220,7 @@ catch{
 
     unFollowUser: async (req, res) => {
       try {
-        const { first, second } = req.body;
+        const { first, second } = req.user;
         const firstUser = await User.findOne({ username: first });
         const secondUser = await User.findOne({ username: second });
       
@@ -193,7 +250,7 @@ catch{
     },
     getFollowers: async (req, res) => {
       try {
-        const { username } = req.body;
+        const { username } = req.user;
         const user = await User.findOne({ username: username });
         if (!user) {
           return res.status(404).json({ error: "User not found" });
@@ -211,7 +268,7 @@ catch{
   },
   getFollowing: async (req, res) => {
     try {
-      const { username } = req.body;
+      const { username } = req.user;
       const user = await User.findOne({ username: username });
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -227,7 +284,7 @@ catch{
     // not tested yet
     updateProfile: async (req, res) => {
       try {
-        const { username, name, bio, location, email, } = req.body;
+        const { username, name, bio, location, email, } = req.user;
         const user = await User.findOne({ username: username });
         if (!user) {
           return res.status(404).json({ error: "User not found" });
@@ -256,5 +313,19 @@ catch{
     catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Internal server error" });
-    }}
+    }},
+    updateProfile:async (req,res)=>{
+      try {
+        console.log("yaha aya")
+        const {username}=req.user
+      const {name,bio,location}=req.body
+      console.log(username,name,bio,location)
+      await User.updateOne({ username: username }, { name,bio,location });
+      res.status(200).json({ message: "User updated successfully",});
+
+      } catch (error) {
+        res.status(500).json({error})
+      }
+      
+    }
 };

@@ -92,7 +92,7 @@ const userController = {
 
       if (user) {
 
-      const token = jwt.sign({ userId: username }, "shivam");
+      const token = jwt.sign({ username: username }, "shivam");
 
       res.cookie("token", token).json({ message: "Login successful",code:"login" });
 
