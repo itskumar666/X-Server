@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { userAuthenticate } from "./middleware/userAuthenticate.js";
 import cloudinary from "./config/cloudinaryconfig.js";
+import cookieParser from "cookie-parser";
 
 // import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
@@ -35,7 +36,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.urlencoded());
-
+app.use(cookieParser());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(bodyParser.json({ limit: "100mb", extended: true }));
