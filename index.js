@@ -8,10 +8,15 @@ import dotenv from "dotenv";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
+import { userAuthenticate } from "./middleware/userAuthenticate.js";
+import { v2 as cloudinary } from 'cloudinary';
+// import multer from 'multer';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 
 // import userRoutes from "./routes/userRoutes.js"
 import controller from "./controller/userController.js";
+import{userData} from "./controller/userData.js";
 
 import nodemailer from "nodemailer";
 import crypto from "crypto";
@@ -19,7 +24,7 @@ import User from "./models/userSchema.js";
 
 const app = express();
 const corsOptions = {
-  origin:"http://localhost:3001",
+  origin:"http://localhost:3000",
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -27,7 +32,6 @@ const PORT = process.env.PORT || 9001;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config();
 app.use(express.json());
 app.use(express.urlencoded());
 
@@ -41,27 +45,47 @@ app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 // importing the db connection from db file
 import("./config/db.js");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    return cb(null, "/uploads");
-  },
-  filename: function (req, file, cb) {
-    return cb(null, `${Date.now()}-${file.originalname}`);
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     return cb(null, "/uploads");
+//   },
+//   filename: function (req, file, cb) {
+//     return cb(null, `${Date.now()}-${file.originalname}`);
+//   },
+// });
+
+// const upload = multer({ storage });
+
+// user auth endpoints
+
+// multer cloudinary
+dotenv.config(); // Load environment variables
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: (req, file) => `users/${req.body.username}`, // Save files in a user-specific folder
+    public_id: (req, file) => Date.now().toString(), // Optional - specify file name
   },
 });
 
 const upload = multer({ storage });
 
-// user auth endpoints
+
 app.use(
   "/api/register",
   upload.single("profileimage"),
   controller.registerUser
 );
-
+app.use("/api/otp", controller.verifyOTP);
 app.use("/api/verify-email", async (req, res) => {
   const token = req.query.token;
-
+  console.log(token,"verfov");
   try {
     const user = await User.findOne({ verificationToken: token });
     if (!user) {
@@ -80,10 +104,13 @@ app.use("/api/verify-email", async (req, res) => {
 });
 app.use("/api/login", controller.userLogin);
 
-app.get("/", (req, res) => {
-  res.send("This is homepage for twitter");
-});
 
+app.use("/api/Home",userAuthenticate);
+app.use("/api/user/posts",userAuthenticate, userData.getAllfollowingPosts);
+// app.use("/api/user/post/",upload.single('media'),userData.postTweet);
+app.use("/api/user/post/",userData.postTweet);
+
+// app.use("/api/users/posts/:id",userAuthenticate,controller.getUserPost);
 app.listen(process.env.PORT, () => {
   console.log("The server is running on ");
 });
