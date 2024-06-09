@@ -116,6 +116,8 @@ app.get("/api/user/userDetails",userData.getuserDetails);
 app.patch("/api/user/follow",userData.followUser);
 app.patch("/api/user/unfollow",userData.unFollowUser);
 app.get("/api/user/allFollowingPosts",userData.getAllfollowingPosts);
+app.get("/api/user/followers",userData.getFollowers);
+app.get("/api/user/following",userData.getFollowing);
 
 
 // app.use("/api/users/posts/:id",userAuthenticate,controller.getUserPost);

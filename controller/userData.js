@@ -185,5 +185,38 @@ catch{
         console.error("Error following user:", error);
         res.status(500).json({ error: "Internal server error" });
       }
+    },
+    getFollowers: async (req, res) => {
+      try {
+        const { username } = req.body;
+        const user = await User.findOne({ username: username });
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        const followers = await User.find({ _id: { $in: user.followers } })
+         .populate("username", "name")
+         .exec();
+        res.status(200).json({ followers });
+
+
+    }catch (error) {
+      console.error("Error fetching followers:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  },
+  getFollowing: async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await User.findOne({ username: username });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const following = await User.find({ _id: { $in: user.following } })
+       .populate("username", "name")
+       .exec();
+      res.status(200).json({ following });  }
+    catch (error) {
+      console.error("Error fetching following:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }}
 };
