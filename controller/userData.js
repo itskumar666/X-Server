@@ -1,6 +1,7 @@
 import { get ,mongoose} from "mongoose";
 import User from "../models/userSchema.js";
 import Tweet from "../models/tweetSchema.js";
+import cloudinary from "../config/cloudinaryconfig.js";
 
 
 
@@ -53,35 +54,40 @@ export const userData = {
   },
   postTweet: async (req, res) => {
     try {
-      const { username, content, media } = req.body;
-     
-      const userId= await User.findOne({ username:username });
+      const { username, content } = req.body;
+      const userId = await User.findOne({ username: username });
+      console.log(username,content)
       if (!userId) {
         return res.status(404).json({ error: "User not found" });
       }
-      console.log(userId,"userId");
-     console.log(username,"req.body hai bc sbajdhhbjhsdbjasd");
 
-     const tweet = new Tweet({
-      username: userId._id,
-      content,
-      media,
-    });
+      const file = req.file;
+      let mediaUrl = '';
 
-    // Save the tweet document first
-    const savedTweet = await tweet.save();
+      if (file) {
+        const result = await cloudinary.uploader.upload(file.path);
+        mediaUrl = result.secure_url;
+      }
 
-    // Push the saved tweet's _id into the user's tweets array
-    await User.updateOne(
-      { _id: userId._id },
-      { $push: { tweets: savedTweet._id } }
-    );
+      const tweet = new Tweet({
+        username: userId._id,
+        content,
+        media: mediaUrl||'not posted on cloud',
+      });
+     console.log(mediaUrl,"url mof media");
+      const savedTweet = await tweet.save();
 
-    res.status(201).json(savedTweet);
+      await User.updateOne(
+        { _id: userId._id },
+        { $push: { tweets: savedTweet._id } }
+      );
+
+      res.status(201).json(savedTweet);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
+  
 },
 deleteTweet: async (req, res) => {
     try {

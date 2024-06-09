@@ -9,7 +9,8 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { userAuthenticate } from "./middleware/userAuthenticate.js";
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from "./config/cloudinaryconfig.js";
+
 // import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
@@ -61,21 +62,29 @@ import("./config/db.js");
 // multer cloudinary
 dotenv.config(); // Load environment variables
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: (req, file) => `users/${req.body.username}`, // Save files in a user-specific folder
-    public_id: (req, file) => Date.now().toString(), // Optional - specify file name
-  },
-});
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET
+// });
+// const storage = new CloudinaryStorage({
+//   cloudinary: cloudinary,
+//   params: {
+//     folder: (req, file) => `users/${req.body.username}`, // Save files in a user-specific folder
+//     public_id: (req, file) => Date.now().toString(), // Optional - specify file name
+//   },
+// });
+// storage.filename = function (req, file, cb) {
+  
+//     if (err) return cb(err);
+//     cb(null, raw.toString('hex') + path.extname(file.originalname));
+//     cb(null, `${Date.now()}-${file.originalname}`);
+  
+// };
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
 
+const upload = multer({ dest: 'uploads/' });
 
 app.use(
   "/api/register",
@@ -108,7 +117,7 @@ app.use("/api/login", controller.userLogin);
 app.use("/api/Home",userAuthenticate);
 app.use("/api/user/posts",userAuthenticate, userData.getAllfollowingPosts);
 // app.use("/api/user/post/",upload.single('media'),userData.postTweet);
-app.use("/api/user/post/",userData.postTweet);
+app.post("/api/user/post",upload.single('file'),userData.postTweet);
 app.delete("/api/user/delete/",userData.deleteTweet);
 app.patch("/api/user/update/",userData.updateTweet);
 app.get("/api/user/myProfile",userData.getMyProfile);
