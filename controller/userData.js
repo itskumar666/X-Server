@@ -74,7 +74,6 @@ export const userData = {
         content,
         media: mediaUrl||'not posted on cloud',
       });
-     console.log(mediaUrl,"url mof media");
       const savedTweet = await tweet.save();
 
       await User.updateOne(
@@ -223,6 +222,39 @@ catch{
       res.status(200).json({ following });  }
     catch (error) {
       console.error("Error fetching following:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }},
+    // not tested yet
+    updateProfile: async (req, res) => {
+      try {
+        const { username, name, bio, location, email, } = req.body;
+        const user = await User.findOne({ username: username });
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        const file = req.file;
+      let mediaUrl = '';
+
+      if (file) {
+        const result = await cloudinary.uploader.upload(file.path);
+        mediaUrl = result.secure_url;
+      }
+        await User.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              name,
+              bio,
+              location,
+              email,
+              username,
+              profilePicture: mediaUrl,
+            },
+          }
+          );
+    }
+    catch (error) {
+      console.error("Error updating profile:", error);
       res.status(500).json({ error: "Internal server error" });
     }}
 };

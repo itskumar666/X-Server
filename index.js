@@ -86,6 +86,7 @@ dotenv.config(); // Load environment variables
 
 const upload = multer({ dest: 'uploads/' });
 
+
 app.use(
   "/api/register",
   upload.single("profileimage"),
@@ -115,6 +116,7 @@ app.use("/api/login", controller.userLogin);
 
 
 app.use("/api/Home",userAuthenticate);
+app.patch("/api/user/profileUpdate",upload.single('file'), userData.updateProfile);
 app.use("/api/user/posts",userAuthenticate, userData.getAllfollowingPosts);
 // app.use("/api/user/post/",upload.single('media'),userData.postTweet);
 app.post("/api/user/post",upload.single('file'),userData.postTweet);
