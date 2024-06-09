@@ -30,7 +30,7 @@ export const userData = {
   getAllfollowingPosts: async (req, res) => {
     try {
       // Find the current user
-      const currentUser = await User.findOne({ username: req.user.username }).populate('following');
+      const currentUser = await User.findOne({ username: req.body.username }).populate('following');
   
       if (!currentUser) {
         return res.status(404).json({ error: "User not found" });
