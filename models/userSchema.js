@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Tweet from "../models/tweetSchema.js";
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
@@ -12,8 +13,9 @@ const userSchema = new Schema({
   dateOfBirth: { type: Date },
   verificationToken:{type:String},
   profilePicture: { type: String, default: '' },
-  followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  following: [{ type: Schema.Types.ObjectId, ref: 'User' }]
+  followers: [{ type: Schema.Types.ObjectId,ref: 'User' }],
+  following: [{ type: Schema.Types.ObjectId ,ref: 'User' }],
+  tweets: [{ type: Schema.Types.ObjectId, ref: 'Tweet' }],
 },{
     timestamps:true
 });

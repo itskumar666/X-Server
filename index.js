@@ -109,6 +109,14 @@ app.use("/api/Home",userAuthenticate);
 app.use("/api/user/posts",userAuthenticate, userData.getAllfollowingPosts);
 // app.use("/api/user/post/",upload.single('media'),userData.postTweet);
 app.use("/api/user/post/",userData.postTweet);
+app.delete("/api/user/delete/",userData.deleteTweet);
+app.patch("/api/user/update/",userData.updateTweet);
+app.get("/api/user/myProfile",userData.getMyProfile);
+app.get("/api/user/userDetails",userData.getuserDetails);
+app.patch("/api/user/follow",userData.followUser);
+app.patch("/api/user/unfollow",userData.unFollowUser);
+app.get("/api/user/allFollowingPosts",userData.getAllfollowingPosts);
+
 
 // app.use("/api/users/posts/:id",userAuthenticate,controller.getUserPost);
 app.listen(process.env.PORT, () => {

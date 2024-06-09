@@ -6,45 +6,45 @@ import Tweet from "../models/tweetSchema.js";
 
 export const userData = {
 
-  getownDetails: async (req, res) => {
-    const users = await User.find({ username: req.user.username })
-      .populate("followers")
-      .populate("following")
+  getMyProfile: async (req, res) => {
+    const users = await User.find({ username: req.body.username })
       .populate("tweets")
-      .populate("name")
-      .populate("profilePicture")
-      .populate("username")
-      .populate("email")
-      .populate("bio")
-      .populate("dateofbirth");
+      .exec();
+     
+      
     res.status(200).json(users);
   },
   getuserDetails: async (req, res) => {
-    const users = await User.find({ username: req.user.username })
+   
+    const users = await User.find({ username: req.body.username })
       .populate("followers")
       .populate("following")
       .populate("tweets")
       .populate("name")
       .populate("profilePicture")
-      .populate("username")
       .populate("bio")
+      .populate("username")
+      .exec();
     res.status(200).json(users);
   },
   getAllfollowingPosts: async (req, res) => {
     try {
       // Find the current user
-      const currentUser = await User.findOne({ username: req.user.username });
+      const currentUser = await User.findOne({ username: req.user.username }).populate('following');
+  
       if (!currentUser) {
         return res.status(404).json({ error: "User not found" });
       }
-
-      // Find tweets from users that the current user is following
-      const posts = await Tweet.find({ userId: { $in: currentUser.following } })
-        .populate("name")
-        .populate("media")
-        .populate("username")
-        .populate("content");
-
+  
+      // Get the _ids of users the current user is following
+      const followingUserIds = currentUser.following.map(user => user._id);
+  
+      // Find tweets where the username (userId) is in the followingUserIds array
+      const posts = await Tweet.find({ username: { $in: followingUserIds } })
+        .populate('username', 'name') // Populate the username field with the user's name
+        .sort({ createdAt: -1 }) // Sort by createdAt in descending order (newest first)
+        .exec();
+  
       res.status(200).json(posts);
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -55,17 +55,29 @@ export const userData = {
     try {
       const { username, content, media } = req.body;
      
-      const userId=User.findOne({ username:username }).populate("_id");
-     console.log(userId,"req.userid hai bc sbajdhhbjhsdbjasd");
-    console.log(username,"req.body hai bc sbajdhhbjhsdbjasd");
-      const tweet = new Tweet({
-        username: mongoose.Types.ObjectId(userId),
-        content,
-        media
-      });
-  
-      await tweet.save();
-      res.status(201).json(tweet);
+      const userId= await User.findOne({ username:username });
+      if (!userId) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      console.log(userId,"userId");
+     console.log(username,"req.body hai bc sbajdhhbjhsdbjasd");
+
+     const tweet = new Tweet({
+      username: userId._id,
+      content,
+      media,
+    });
+
+    // Save the tweet document first
+    const savedTweet = await tweet.save();
+
+    // Push the saved tweet's _id into the user's tweets array
+    await User.updateOne(
+      { _id: userId._id },
+      { $push: { tweets: savedTweet._id } }
+    );
+
+    res.status(201).json(savedTweet);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -73,15 +85,105 @@ export const userData = {
 },
 deleteTweet: async (req, res) => {
     try {
-      const tweet = await Tweet.findOne({ _id: req.params.id });
+      const { id } = req.body;
+      console.log(id,"id");
+      const tweet = await Tweet.findOne({ _id: id });
+      console.log(tweet,"tweet");
       if (!tweet) {
         return res.status(404).json({ error: "Tweet not found" });
       }
+      await Tweet.deleteOne({ _id: id });
+      res.status(204).json({ message: "Tweet deleted successfully" });
 
 }
 catch{
-      console.error("Error deleting tweet:", error);
+      console.error("Error deleting tweet:");
       res.status(500).json({ error: "Internal server error" });
     }
 
-}};
+},
+updateTweet: async (req, res) => {
+  try {
+    const { id, content} = req.body;
+    console.log(id,"id");
+    const tweet = await Tweet.findOne({ _id: id });
+    console.log(tweet,"tweet");
+    if (!tweet) {
+      return res.status(404).json({ error: "Tweet not found" });
+
+}
+await Tweet.updateOne({ _id: id }, { content });
+const updatedTweet=await Tweet.findOne({ _id: id });
+res.status(200).json({ message: "Tweet updated successfully",updatedTweet:updatedTweet });
+
+}
+catch{
+      console.error("Error updating tweet:");
+      res.status(500).json({ error: "Internal server error" });
+    }
+
+  },
+
+  // follow user
+
+  followUser: async (req, res) => {
+    try {
+      const { first, second } = req.body;
+      const firstUser = await User.findOne({ username: first });
+      const secondUser = await User.findOne({ username: second });
+    
+      if (!firstUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    
+      if (!secondUser) {
+        return res.status(404).json({ error: "User2 not found" });
+      }
+    
+      await User.updateOne(
+        { _id: firstUser._id },
+        { $push: { followers: secondUser._id } }
+      );
+    
+      await User.updateOne(
+        { _id: secondUser._id },
+        { $push: { following: firstUser._id } }
+      );
+    
+      res.status(200).json({ message: "User followed successfully" });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }},
+
+    unFollowUser: async (req, res) => {
+      try {
+        const { first, second } = req.body;
+        const firstUser = await User.findOne({ username: first });
+        const secondUser = await User.findOne({ username: second });
+      
+        if (!firstUser) {
+          return res.status(404).json({ error: "User not found" });
+        }
+      
+        if (!secondUser) {
+          return res.status(404).json({ error: "User2 not found" });
+        }
+      
+        await User.updateOne(
+          { _id: firstUser._id },
+          { $pull: { followers: secondUser._id } }
+        );
+      
+        await User.updateOne(
+          { _id: secondUser._id },
+          { $pull: { following: firstUser._id } }
+        );
+      
+        res.status(200).json({ message: "User unfollowed successfully" });
+      } catch (error) {
+        console.error("Error following user:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    }
+};
