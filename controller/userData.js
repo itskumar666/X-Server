@@ -58,10 +58,12 @@ export const userData = {
     // }
     try {
       const username = req.user.username;
-      console.log(username, "ye user 2 wala");
+      // console.log(username, "ye user 2 wala");
     
       // Find the user and populate the following field
-      const user = await User.findOne({ username: username }).populate({
+      const user = await User.findOne({ username: username })
+      .populate("profilePicture")
+      .populate({
         path: 'following',
         populate: {
           path: 'tweets', // Assuming 'tweets' is the field name in the User schema
@@ -84,7 +86,7 @@ export const userData = {
     })
     arr=arr.flat();
     arr.sort((a, b) => b.createdAt - a.createdAt);
-      console.log("arr",arr)
+      // console.log("arr",arr)
     let ans=[]
     // arr.map(tweet=>{
       
@@ -147,8 +149,8 @@ export const userData = {
 },
 deleteTweet: async (req, res) => {
     try {
-      const { id } = req.user;
-      console.log(id,"id");
+      
+      const { id } = req.body;
       const tweet = await Tweet.findOne({ _id: id });
       console.log(tweet,"tweet");
       if (!tweet) {
@@ -166,21 +168,37 @@ catch{
 },
 updateTweet: async (req, res) => {
   try {
-    const { id, content} = req.user;
-    console.log(id,"id");
+    const { id, content} = req.body;
+    console.log(id,"id of update tweet");
     const tweet = await Tweet.findOne({ _id: id });
-    console.log(tweet,"tweet");
+
+    const updateData = {};
+    
+    // Add fields that are present in the request body
+    if (content !== null && content !== undefined) {
+      updateData.content = content;
+    }
+    const file = req.file;
+    if (file) {
+      const result = await cloudinary.uploader.upload(file.path);
+      updateData.media = result.secure_url;
+    }
+    console.log(updateData)
+    const tweetUpdateResult = await Tweet.updateOne(
+      { _id: id },
+      { $set: updateData },
+      { new: true }
+    );
+    console.log(tweetUpdateResult,"tweet");
     if (!tweet) {
       return res.status(404).json({ error: "Tweet not found" });
 
 }
-await Tweet.updateOne({ _id: id }, { content });
-const updatedTweet=await Tweet.findOne({ _id: id });
-res.status(200).json({ message: "Tweet updated successfully",updatedTweet:updatedTweet });
+
+res.status(200).json({ message: "Tweet updated successfully",});
 
 }
 catch{
-      console.error("Error updating tweet:");
       res.status(500).json({ error: "Internal server error" });
     }
 
@@ -189,11 +207,15 @@ catch{
   // follow user
 
   followUser: async (req, res) => {
+    console.log("request follow me aya hai")
     try {
-      const { first, second } = req.body;
+      //second is following first
+      const { username } = req.user;
+      const second=username
+      const {first}=req.body;
       const firstUser = await User.findOne({ username: first });
       const secondUser = await User.findOne({ username: second });
-    
+      console.log("request follow me aya hai",first,second)
       if (!firstUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -220,10 +242,12 @@ catch{
 
     unFollowUser: async (req, res) => {
       try {
-        const { first, second } = req.user;
+        const { username } = req.user;
+        const second=username
+        const {first}=req.body
         const firstUser = await User.findOne({ username: first });
         const secondUser = await User.findOne({ username: second });
-      
+        console.log("request unfollow me aya hai",first,second)
         if (!firstUser) {
           return res.status(404).json({ error: "User not found" });
         }
@@ -281,51 +305,101 @@ catch{
       console.error("Error fetching following:", error);
       res.status(500).json({ error: "Internal server error" });
     }},
-    // not tested yet
+    // // not tested yet
+    // updateProfile: async (req, res) => {
+    //   try {
+    //     const { username, name, bio, location, email, } = req.user;
+    //     const user = await User.findOne({ username: username });
+        
+    //     if (!user) {
+    //       return res.status(404).json({ error: "User not found" });
+    //     }
+    //     const file = req.file;
+    //   let mediaUrl = '';
+
+    //   if (file) {
+    //     const result = await cloudinary.uploader.upload(file.path);
+    //     mediaUrl = result.secure_url;
+    //   }
+    //   const tweetUpdateResult = await Tweet.updateMany(
+    //     { username: req.user.username },
+    //     {   profilePicture: mediaUrl  }
+    //   );
+    //   console.log('Tweet update result:', tweetUpdateResult);
+    //     await User.updateOne(
+    //       { _id: user._id },
+    //       {
+    //         $set: {
+    //           name,
+    //           bio,
+    //           location,
+    //           email,
+    //           username,
+    //           profilePicture: mediaUrl,
+    //         },
+    //       }
+    //       );
+    // }
+    // catch (error) {
+    //   console.error("Error updating profile:", error);
+    //   res.status(500).json({ error: "Internal server error" });
+    // }},
     updateProfile: async (req, res) => {
       try {
-        const { username, name, bio, location, email, } = req.user;
-        const user = await User.findOne({ username: username });
-        if (!user) {
-          return res.status(404).json({ error: "User not found" });
+        console.log("yaha aya");
+        const { username } = req.user;
+        const updateData = {};
+        const { name, bio, location } = req.body;
+    
+        // Add fields that are present in the request body
+        if (name !== null && name !== undefined) {
+          updateData.name = name;
         }
+        if (bio !== null && bio !== undefined) {
+          updateData.bio = bio;
+        }
+    
         const file = req.file;
-      let mediaUrl = '';
+        if (file) {
+          const result = await cloudinary.uploader.upload(file.path);
+          updateData.profilePicture = result.secure_url;
+        }
+        const tweetUpdateResult = await Tweet.updateMany(
+          { username: req.user.username },
+          { $set: { profilePicture:  updateData.profilePicture } }
+        );
+        console.log('Tweet update result:', tweetUpdateResult);
+    
+        const updatedUser = await User.findOneAndUpdate(
+          { username: username },
+          { $set: updateData },
+          { new: true }
+        );
 
-      if (file) {
-        const result = await cloudinary.uploader.upload(file.path);
-        mediaUrl = result.secure_url;
-      }
-        await User.updateOne(
-          { _id: user._id },
-          {
-            $set: {
-              name,
-              bio,
-              location,
-              email,
-              username,
-              profilePicture: mediaUrl,
-            },
-          }
-          );
-    }
-    catch (error) {
-      console.error("Error updating profile:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }},
-    updateProfile:async (req,res)=>{
-      try {
-        console.log("yaha aya")
-        const {username}=req.user
-      const {name,bio,location}=req.body
-      console.log(username,name,bio,location)
-      await User.updateOne({ username: username }, { name,bio,location });
-      res.status(200).json({ message: "User updated successfully",});
-
+    
+        res.status(200).json({ message: "User updated successfully", updatedUser });
       } catch (error) {
-        res.status(500).json({error})
+        res.status(500).json({ error });
       }
-      
+    },
+
+  
+
+    searchUser: async (req, res) => {
+      let follow=false
+      const{username}=req.user
+      let { searchQuery } = req.body;
+      const check = await User.findOne({ username: searchQuery });
+
+      const user = await User.findOne({ username: username })
+   
+
+    follow = user.following.includes(check._id);     
+      if (!check) {
+        res.status(404).json({ message: "User not found" });
+      } else {
+        console.log(check);
+        res.status(200).json({ data: check ,follow:follow});
+      }
     }
 };

@@ -124,16 +124,17 @@ app.get("/",verifyToken,(req,res)=>{
 app.patch("/api/user/profileUpdate",verifyToken,upload.single('file'), userData.updateProfile);
 app.use("/api/user/posts",verifyToken, userData.getAllfollowingPosts);
 app.post("/api/user/post",verifyToken,upload.single('file'),userData.postTweet);
-app.delete("/api/user/delete/",verifyToken,userData.deleteTweet);
-app.patch("/api/user/update/",verifyToken,userData.updateTweet);
+app.post("/api/user/delete",userData.deleteTweet);
+app.patch("/api/user/updateTweet",verifyToken,upload.single('file'),userData.updateTweet);
 app.get("/api/user/myProfile",verifyToken,userData.getMyProfile);
-app.put("/api/user/profileUpdate",verifyToken,userData.updateProfile);
+app.patch("/api/user/profileUpdate",verifyToken,upload.single('file'),userData.updateProfile);
 app.get("/api/user/userDetails",verifyToken,userData.getuserDetails);
-app.patch("/api/user/follow",userData.followUser);
+app.patch("/api/user/follow",verifyToken,userData.followUser);
 app.patch("/api/user/unfollow",verifyToken,userData.unFollowUser);
 app.get("/api/user/allFollowingPosts",verifyToken,userData.getAllfollowingPosts);
 app.get("/api/user/followers",verifyToken,userData.getFollowers);
 app.get("/api/user/following",verifyToken,userData.getFollowing);
+app.post("/api/user/searchUser",verifyToken,userData.searchUser)
 
 
 // app.use("/api/users/posts/:id",userAuthenticate,controller.getUserPost);

@@ -7,13 +7,13 @@ export const verifyToken = (req, res, next) => {
     
   const token = req.headers.authorization;
   
-console.log("heaser",req.headers)
+  //  console.log("header",req.headers)
   if (token) {
   
-console.log("token is",token);
+// console.log("token is",token);
     jwt.verify(token, "shivam", (err, decodedToken) => {
       if (err) {
-        console.log("not verified",decodedToken);
+        // console.log("not verified",decodedToken);
         res.status(401).json({ error: 'Unauthorized' });
       } else {
         req.user = decodedToken;

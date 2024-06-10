@@ -13,6 +13,7 @@ const userSchema = new Schema({
   dateOfBirth: { type: Date },
   verificationToken:{type:String},
   profilePicture: { type: String, default: '' },
+  profileBanner: { type: String, default: '' },
   followers: [{ type: Schema.Types.ObjectId,ref: 'User' }],
   following: [{ type: Schema.Types.ObjectId ,ref: 'User' }],
   tweets: [{ type: Schema.Types.ObjectId, ref: 'Tweet' }],
