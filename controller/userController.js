@@ -45,10 +45,12 @@ const userController = {
       const savedUser = await newUser.save();
 
       const token = jwt.sign({ userId: savedUser._id }, "shivam");
-
+      if(!savedUser){
+        res.json({message:"Enter Unique username"})
+       }
       res.cookie("signuptoken", token).json({ message: "signup successful" });
 
-      const newOtpVerification = await new OtpModel({
+      const newOtpVerification = new OtpModel({
         userId: savedUser._id,
         otp: otp,
         createdAt: Date.now(),
@@ -56,7 +58,7 @@ const userController = {
       });
 
       await newOtpVerification.save();
-
+    
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error(error);
@@ -116,7 +118,7 @@ const userController = {
 
       if (!otpRecord) {
         await User.deleteOne({ _id: userId });
-        return res.status(400).json({ message: "OTP record not found" });
+        return res.status(400).json({ message: "OTP record not found",code:"invalid" });
       }
 
       if (otpRecord.expiresAt < Date.now()) {
@@ -126,7 +128,7 @@ const userController = {
 
       if (otpRecord.otp !== otp) {
         await User.deleteOne({ _id: userId });
-        return res.status(400).json({ message: "Invalid OTP" });
+        return res.status(400).json({ message: "Invalid OTP",code:"invalid" });
       }
 
       await User.findByIdAndUpdate(userId, { $set: { verified: true } });
