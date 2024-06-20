@@ -29,33 +29,7 @@ export const userData = {
     res.status(200).json(users);
   },
   getAllfollowingPosts: async (req, res) => {
-    // try {
-    //   // Find the current user
-    //   const currentUser = await User.findOne({ username: req.user.username }).populate('following');
-  
-    //   if (!currentUser) {
-    //     return res.status(404).json({ error: "User not found" });
-    //   }
-    //  console.log(currentUser,"currentUser")
-    //   // Get the _ids of users the current user is following
-    //   const followingUserIds = currentUser.following.map(user => user._id);
-  
-    //   // Find tweets where the username (userId) is in the followingUserIds array
-    //   console.log('Tweet Query:', { username: { $in: followingUserIds } });
-    //   const posts = await Tweet.find({ username: { $in: followingUserIds } })
-    //     // .populate('username', 'name') // Populate the username field with the user's name
-    //     // .sort({ createdAt: -1 })
-    //     .limit(100) // Sort by createdAt in descending order (newest first)
-    //     .exec();
-        
-    //   console.log(posts)
-    //   console.log("Number of Posts Retrieved:", posts.length);
-
-    //   res.status(200).json(posts);
-    // } catch (error) {
-    //   console.error("Error fetching posts:", error);
-    //   res.status(500).json({ error: "Internal server error" });
-    // }
+    
     try {
       const username = req.user.username;
       // console.log(username, "ye user 2 wala");
@@ -392,9 +366,11 @@ catch{
       const check = await User.findOne({ username: searchQuery });
 
       const user = await User.findOne({ username: username })
-   
+      if(!check) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-    follow = user.following.includes(check._id);     
+      follow = user.following.includes(check._id);     
       if (!check) {
         res.status(404).json({ message: "User not found" });
       } else {

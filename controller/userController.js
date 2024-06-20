@@ -22,13 +22,13 @@ const userController = {
       const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
 
       const mailOptions = {
-        from: '"twitter" <shivamdubeyfd@gmai.com>',
+        from: '"twitter" <ashutosh962132@gmail.com>',
         to: email,
         subject: "Verify Your Email Address for twitter",
         html: `
           Hi ${name},
-          Thank you for registering with twitter!
-          To activate your account, please enter otp ${otp}
+          Thank you for registering with X Clone!
+          To verify your account, please enter otp ${otp}
         `,
       };
 
@@ -44,7 +44,7 @@ const userController = {
 
       const savedUser = await newUser.save();
 
-      const token = jwt.sign({ userId: savedUser._id }, "shivam");
+      const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET_KEY);
       if(!savedUser){
         res.json({message:"Enter Unique username"})
        }
@@ -94,7 +94,7 @@ const userController = {
 
       if (user) {
 
-      const token = jwt.sign({ username: username }, "shivam");
+      const token = jwt.sign({ username: username }, process.env.JWT_SECRET_KEY);
 
       res.cookie("token", token);
       res.cookie("username",username).json({ message: "Login successful",code:"login" });
